@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pi-hole Blocked Sites</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+        }
+        .blocked-sites {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow-y: scroll;
+            max-height: 300px;
+        }
+        .blocked-sites ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .blocked-sites li {
+            padding: 5px;
+            background-color: #f1f1f1;
+            margin-bottom: 5px;
+            border-radius: 3px;
+        }
+        .unblock-form {
+            margin-top: 20px;
+            text-align: center;
+        }
+        input[type="text"] {
+            padding: 5px;
+            width: 200px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #28a745;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pi-hole Blocked Sites</h1>
+        
+        <div class="blocked-sites">
+            <h3>Blocked Sites</h3>
+            <ul id="blocked-sites-list">
+                <!-- Blocked sites will be loaded here -->
+            </ul>
+        </div>
+
+        <div class="unblock-form">
+            <h3>Unblock a Site</h3>
+            <input type="text" id="domain-to-unblock" placeholder="Enter domain to unblock">
+            <button onclick="unblockSite()">Unblock</button>
+        </div>
+    </div>
+
+    <script>
+        // Function to get the list of blocked sites
+        function fetchBlockedSites() {
+            fetch('http://localhost:5000/api/blocked')
+                .then(response => response.json())
+                .then(data => {
+                    const sitesList = document.getElementById('blocked-sites-list');
+                    sitesList.innerHTML = ''; // Clear the existing list
+                    data.forEach(site => {
+                        const listItem = document.createElement('li');
+                        listItem.textContent = site;
+                        sitesList.appendChild(listItem);
+                    });
+                })
+                .catch(error => console.error('Error fetching blocked sites:', error));
+        }
+
+        // Function to unblock a site
+        function unblockSite() {
+            const domain = document.getElementById('domain-to-unblock').value;
+            if (!domain) {
+                alert("Please enter a domain to unblock.");
+                return;
+            }
+
+            fetch('http://localhost:5000/api/unblock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ domain: domain })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.message.includes('unblocked')) {
+                    fetchBlockedSites();  // Refresh the list after unblocking
+                }
+            })
+            .catch(error => console.error('Error unblocking site:', error));
+        }
+
+        // Initial load of blocked sites
+        fetchBlockedSites();
+    </script>
+</body>
+</html>
